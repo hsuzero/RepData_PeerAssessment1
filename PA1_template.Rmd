@@ -1,25 +1,146 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+output:
+  html_document: default
+  pdf_document: default
 ---
+Reproducible Research Course Project -1
+========================================
+
+This R markdown file is submitting of Reproducible Research assignment.  
+
+**Assignment ** 
+**Loading and preprocessing the data**  
+I load the data set(also attend in the folder) by read.csv() and named the data frame as "df".
+```{R}
+unzip("./activity.zip")
+df <- read.csv("./activity.csv", header = TRUE)
+```
+And, check the features of df.  
+```{R}
+str(df)
+
+dim(df)
+```
+Transform the type of column date into date format.
+```{R}
+df <- transform(df, date = as.Date(date))
+```
+
+**What is mean total number of steps taken per day?**  
+For this part of the assignment, I ignore the missing values in the dataset.  
+1.Calculate the total number of steps taken per day.  
+```{R, aggregate}
+ df1 <- aggregate(steps~date,df,sum, na.rm=TRUE)
+```
+2.Make a histogram of the total number of steps taken each day.  
+```{R, hist plot}
+hist(df1$steps, xlab = "Total number of steps ", main = "Histogram of total steps per day")
+```
+
+3.Calculate and report the mean and median of the total number of steps taken per day.  
+```{R, mean & median}
+MeanPerDay <- mean(df1$steps)
+print(MeanPerDay)
+
+MedianPerDay <- median(df1$steps)
+print(MedianPerDay)
+```
+* Mean of total number of steps is 10766.19 and stored in variable MeanPerDay.  
+* Median of total number of steps is 10765 and stored in variable MedianPerDay.  
 
 
-## Loading and preprocessing the data
+**What is the average daily activity pattern?**  
+1.Make a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis).
+```{R,the average daily activity pattern}
+df2 <- aggregate(steps~interval,df,mean, na.rm=TRUE)
+plot(steps~interval, df2, type="l", main="the average daily activity pattern")
+```
+  
+* Average steps of interval is stored in data frame df2.  
+  
+2.Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?  
+```{R, Max interva}
+Max.interval <- df2[which.max(df2$steps),]$interval
+Max.interval
+```
+* Max interval is 835 and stored in variable Max.interval.  
+
+
+**Imputing missing values**  
+1.Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs).   
+```{R, Total Na}
+Total.Na <- sum(is.na(df$steps))
+Total.Na
+```
+
+2.Devise a strategy for filling in all of the missing values in the dataset.  
+Let's use a simply strategy to replace NAs with the average steps of same interval which from df2.  
+```{R, replace NAs}
+df.new <- df
+list.na <- is.na(df.new$steps)
+
+for (i in 1:nrow(df.new)) {
+    if (list.na[i] == TRUE) {
+    j <- which(df.new[i,"interval"] == df2[,"interval"])
+    df.new[i,"steps"] <- round(df2[j,"steps"])
+    }
+}
+```
+
+Then, check NAs in df.new data frame. That's done.
+```{R, sum of NAs}
+sum(is.na(df.new))
+```
+
+3.Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day.   
+```{R}
+ df1.new <- aggregate(steps~date,df.new,sum)
+```
+
+```{R, hist, echo = FALSE}
+hist(df1.new$steps, xlab = "Total number of steps ", main = "Histogram of total steps per day")
+```
+
+Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+```{R, Mean & Median}
+MeanPerDay.new <- mean(df1.new$steps)
+print(MeanPerDay.new)
+
+MedianPerDay.new <- median(df1.new$steps)
+print(MedianPerDay.new)
+```
+* MeanPerDay.new is 10765.63, a little small than MeanPerDay(10766.19).
+* MedianPerDay.new is 10762, a little small than MedianPerDay(10765).
+* After filling NAs value, the mean and median have less than 0.1% change of original values.
+
+
+**Are there differences in activity patterns between weekdays and weekends?**  
+1.Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.  
+```{R}
+df.new$WK <- ifelse(weekdays(df.new$date) == "Sunday" | weekdays(df.new$date) == "Saturday", "Weekend", "Workday")
+
+df.new$WK <- as.factor(df.new$WK)
+```
+
+```{R}
+str(df.new)
+```
+
+
+2.Make a panel plot containing a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).   
+```{R, plot}
+sub.1 <- subset(df.new, WK=="Weekend")
+sub.2 <- subset(df.new, WK=="Workday")
+sub1.d <- aggregate(steps~interval,sub.1,mean, na.rm=TRUE)
+sub2.d <- aggregate(steps~interval,sub.2,mean, na.rm=TRUE)
+
+par(mfrow=c(2,1), mar=c(6,4,2,4))
+plot(steps~interval, sub1.d, type = "l", main = "Weekend")
+plot(steps~interval, sub2.d, type = "l", main = "Workday")
+```
 
 
 
-## What is mean total number of steps taken per day?
+*The end of R markdown file*
 
 
-
-## What is the average daily activity pattern?
-
-
-
-## Imputing missing values
-
-
-
-## Are there differences in activity patterns between weekdays and weekends?
